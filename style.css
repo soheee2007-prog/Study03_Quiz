@@ -19,7 +19,16 @@ h1 { font-size: 1.5rem; margin: 8px 0 16px; }
 h2 { font-size: 1.2rem; line-height: 1.5; margin: 8px 0 16px; }
 
 .notice { color: #52606d; margin: 0 0 16px; }
-.progress { color: #52606d; margin: 0; }
+
+/* 문제 화면 위쪽 줄: 카테고리와 모드, 진행, 점수, 남은 시간 */
+.status {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  color: #52606d;
+  font-size: 0.9rem;
+  margin: 8px 0 12px;
+}
 
 /* 버튼은 한 줄에 하나씩 */
 .choices { display: flex; flex-direction: column; gap: 10px; }
@@ -30,8 +39,8 @@ button {
   padding: 12px 14px;
   text-align: left;
   background: #fff;
-  border: 2px solid #cbd2d9;
-  border-radius: 8px;
+  border: 1px solid #d3d8e0;
+  border-radius: 10px;
   cursor: pointer;
 }
 button:hover:not(:disabled) { border-color: #3e7bd6; }
@@ -47,14 +56,16 @@ button.wrong { background: #fde2e2; border-color: #c0392b; opacity: 1; }
 .explanation, .source { margin: 4px 0; line-height: 1.5; }
 .score { font-size: 1.4rem; font-weight: bold; }
 
-/* 모드 선택: 고른 모드를 강조 */
-.modes { display: flex; gap: 10px; margin-bottom: 16px; }
-.modes button { flex: 1; text-align: center; }
-.modes button.selected { background: #3e7bd6; border-color: #3e7bd6; color: #fff; }
+/* 모드 선택 카드: 모드 이름, 규칙 한 줄, 연습 모드의 안내 표시 */
+.mode-card { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
+.mode-card span { color: #52606d; font-size: 0.9rem; }
+.mode-card .badge { background: #fff4d6; color: #1f2933; padding: 2px 8px; border-radius: 4px; }
+.back { margin-top: 16px; }
 
 /* 힌트로 지운 보기: 일반 비활성 보기보다 더 흐리게, 점선 테두리 */
 button.hinted { opacity: 0.25; border-style: dashed; text-decoration: line-through; }
-.hint { margin-top: 16px; }
+.hint { width: 100%; margin-top: 16px; text-align: center; }
 
-/* 스피드 모드 남은 시간 */
-.timer { font-weight: bold; color: #c0392b; margin: 4px 0 0; }
+/* 스피드 모드 남은 시간: 5초 이하에서 빨간색 */
+.timer { font-weight: bold; }
+.timer.urgent { color: #c0392b; }
