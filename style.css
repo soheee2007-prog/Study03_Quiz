@@ -46,3 +46,8 @@ button.wrong { background: #fde2e2; border-color: #c0392b; opacity: 1; }
 .verdict { font-weight: bold; margin: 16px 0 4px; }
 .explanation, .source { margin: 4px 0; line-height: 1.5; }
 .score { font-size: 1.4rem; font-weight: bold; }
+
+/* 모드 선택: 고른 모드를 강조 */
+.modes { display: flex; gap: 10px; margin-bottom: 16px; }
+.modes button { flex: 1; text-align: center; }
+.modes button.selected { background: #3e7bd6; border-color: #3e7bd6; color: #fff; }

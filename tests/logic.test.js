@@ -137,3 +137,31 @@ test("상수", () => {
   assert.strictEqual(vm.runInContext("QUESTIONS_PER_ROUND", ctx), 10);
   assert.strictEqual(vm.runInContext("SPEED_SECONDS", ctx), 15);
 });
+
+test("틀린 문제 다시 풀기: 틀린 문항만 모아 새 판을 만들고, 또 틀린 것만 다시 남는다", () => {
+  const s = newState();
+  // 앞의 3문항은 틀리고 나머지는 맞힌다.
+  for (let i = 0; i < 10; i++) {
+    const rq = s.round[i];
+    const wrong = rq.choices.find((c) => c !== rq.correctChoice);
+    ctx.answerCurrent(s, i < 3 ? wrong : rq.correctChoice);
+    ctx.nextQuestion(s);
+  }
+  assert.strictEqual(s.wrongIds.length, 3);
+
+  const retryQuestions = HISTORY.filter((q) => s.wrongIds.includes(q.id));
+  const retry = ctx.createState("practice", s.category, retryQuestions, { isRetry: true });
+  assert.strictEqual(retry.isRetry, true);
+  assert.deepStrictEqual(plain(retry.round.map((q) => q.id)).sort(), [...s.wrongIds].sort());
+  assert.deepStrictEqual(plain(retry.wrongIds), []);
+
+  // 다시 풀기에서 1개만 또 틀린다.
+  for (let i = 0; i < 3; i++) {
+    const rq = retry.round[i];
+    const wrong = rq.choices.find((c) => c !== rq.correctChoice);
+    ctx.answerCurrent(retry, i === 0 ? wrong : rq.correctChoice);
+    ctx.nextQuestion(retry);
+  }
+  assert.deepStrictEqual(plain(retry.wrongIds), [retry.round[0].id]);
+  assert.strictEqual(retry.score, 2);
+});

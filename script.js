@@ -89,6 +89,7 @@ function formatProgress(index, total) {
 if (typeof document !== "undefined") {
   const app = document.getElementById("app");
   let state = null;
+  let selectedMode = "practice";
 
   // 요소를 쉽게 만드는 도우미. 문자열은 textContent로만 넣는다.
   function el(tag, text, className) {
@@ -111,21 +112,43 @@ if (typeof document !== "undefined") {
       renderError("문제 파일을 불러오지 못했습니다.");
       return;
     }
+    const notice = el("p", "순위표에 기록되지 않음", "notice");
+    notice.hidden = selectedMode !== "practice";
+
+    // 모드 버튼. 고른 모드만 selected 표시를 한다.
+    const modeList = el("div", undefined, "modes");
+    const modeButtons = {};
+    for (const mode of Object.keys(MODE_LABELS)) {
+      const button = el("button", MODE_LABELS[mode]);
+      button.classList.toggle("selected", mode === selectedMode);
+      button.addEventListener("click", () => {
+        selectedMode = mode;
+        for (const key of Object.keys(modeButtons)) {
+          modeButtons[key].classList.toggle("selected", key === mode);
+        }
+        notice.hidden = mode !== "practice";
+      });
+      modeButtons[mode] = button;
+      modeList.appendChild(button);
+    }
+
     const list = el("div", undefined, "choices");
     for (const category of CATEGORIES) {
       const button = el("button", category);
       button.addEventListener("click", () => {
         const questions = QUESTIONS.filter((q) => q.category === category);
-        state = createState("practice", category, questions);
+        state = createState(selectedMode, category, questions);
         renderQuestion();
       });
       list.appendChild(button);
     }
     show(
       el("h1", "상식 퀴즈"),
+      el("p", "모드를 고르세요.", "notice"),
+      modeList,
       el("p", "카테고리를 고르세요.", "notice"),
       list,
-      el("p", "순위표에 기록되지 않음", "notice")
+      notice
     );
   }
 
@@ -185,14 +208,28 @@ if (typeof document !== "undefined") {
   }
 
   function renderResult() {
+    const isPractice = state.mode === "practice";
+    const total = state.round.length;
+    const scoreText = state.isRetry
+      ? formatRetryScore(state.score, total)
+      : formatScore(state.score, total);
     const home = el("button", "처음으로", "next");
     home.addEventListener("click", renderStart);
-    show(
-      el("h1", "결과"),
-      el("p", formatScore(state.score, state.round.length), "score"),
-      el("p", "순위표에 기록되지 않음", "notice"),
-      home
-    );
+
+    const nodes = [el("h1", "결과"), el("p", scoreText, "score")];
+    if (isPractice) nodes.push(el("p", "순위표에 기록되지 않음", "notice"));
+    // 연습 판에서 틀린 문제가 있으면 다시 풀기 버튼을 보여 준다.
+    if (isPractice && state.wrongIds.length > 0) {
+      const retry = el("button", "틀린 문제 다시 풀기", "next");
+      retry.addEventListener("click", () => {
+        const wrong = QUESTIONS.filter((q) => state.wrongIds.includes(q.id));
+        state = createState("practice", state.category, wrong, { isRetry: true });
+        renderQuestion();
+      });
+      nodes.push(retry);
+    }
+    nodes.push(home);
+    show(...nodes);
   }
 
   renderStart();
