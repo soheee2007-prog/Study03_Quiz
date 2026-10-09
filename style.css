@@ -55,3 +55,6 @@ button.wrong { background: #fde2e2; border-color: #c0392b; opacity: 1; }
 /* 힌트로 지운 보기: 일반 비활성 보기보다 더 흐리게, 점선 테두리 */
 button.hinted { opacity: 0.25; border-style: dashed; text-decoration: line-through; }
 .hint { margin-top: 16px; }
+
+/* 스피드 모드 남은 시간 */
+.timer { font-weight: bold; color: #c0392b; margin: 4px 0 0; }

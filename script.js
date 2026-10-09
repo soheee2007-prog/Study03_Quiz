@@ -102,6 +102,8 @@ if (typeof document !== "undefined") {
   const app = document.getElementById("app");
   let state = null;
   let selectedMode = "practice";
+  let timerId = null;
+  let secondsLeft = 0;
 
   // 요소를 쉽게 만드는 도우미. 문자열은 textContent로만 넣는다.
   function el(tag, text, className) {
@@ -115,11 +117,35 @@ if (typeof document !== "undefined") {
     app.replaceChildren(...nodes);
   }
 
+  // 스피드 모드 타이머. 시작 전에 항상 이전 타이머를 정리한다.
+  function stopTimer() {
+    if (timerId !== null) {
+      clearInterval(timerId);
+      timerId = null;
+    }
+  }
+
+  function startTimer(label) {
+    stopTimer();
+    secondsLeft = SPEED_SECONDS;
+    label.textContent = `남은 시간 ${secondsLeft}초`;
+    timerId = setInterval(() => {
+      secondsLeft -= 1;
+      label.textContent = `남은 시간 ${secondsLeft}초`;
+      if (secondsLeft <= 0) {
+        stopTimer();
+        const result = answerCurrent(state, null);
+        if (result) renderFeedback(result, null);
+      }
+    }, 1000);
+  }
+
   function renderError(message) {
     show(el("p", message));
   }
 
   function renderStart() {
+    stopTimer();
     if (typeof QUESTIONS === "undefined") {
       renderError("문제 파일을 불러오지 못했습니다.");
       return;
@@ -171,6 +197,7 @@ if (typeof document !== "undefined") {
     for (const choice of current.choices) {
       const button = el("button", choice);
       button.addEventListener("click", () => {
+        stopTimer();
         const result = answerCurrent(state, choice);
         if (result) renderFeedback(result, choice);
       });
@@ -196,11 +223,21 @@ if (typeof document !== "undefined") {
       });
       nodes.push(hint);
     }
+    // 스피드 모드에서만 남은 시간을 보여 주고 센다.
+    if (state.mode === "speed") {
+      const timer = el("p", undefined, "timer");
+      nodes.splice(1, 0, timer);
+      show(...nodes);
+      startTimer(timer);
+      return;
+    }
+    stopTimer();
     show(...nodes);
   }
 
   // 답한 뒤 화면. chosen은 고른 보기(없으면 null).
   function renderFeedback(result, chosen) {
+    stopTimer();
     const current = state.round[state.index];
     const list = el("div", undefined, "choices");
     for (const choice of current.choices) {
@@ -226,10 +263,13 @@ if (typeof document !== "undefined") {
       else renderResult();
     });
 
+    const verdictNodes = [];
+    if (chosen === null) verdictNodes.push(el("p", "시간 초과", "verdict"));
     show(
       el("p", formatProgress(state.index, state.round.length), "progress"),
       el("h2", current.question),
       list,
+      ...verdictNodes,
       el("p", result.correct ? "정답입니다." : "오답입니다.", "verdict"),
       el("p", current.explanation, "explanation"),
       source,
@@ -238,6 +278,7 @@ if (typeof document !== "undefined") {
   }
 
   function renderResult() {
+    stopTimer();
     const isPractice = state.mode === "practice";
     const total = state.round.length;
     const scoreText = state.isRetry
