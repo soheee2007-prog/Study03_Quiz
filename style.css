@@ -51,3 +51,7 @@ button.wrong { background: #fde2e2; border-color: #c0392b; opacity: 1; }
 .modes { display: flex; gap: 10px; margin-bottom: 16px; }
 .modes button { flex: 1; text-align: center; }
 .modes button.selected { background: #3e7bd6; border-color: #3e7bd6; color: #fff; }
+
+/* 힌트로 지운 보기: 일반 비활성 보기보다 더 흐리게, 점선 테두리 */
+button.hinted { opacity: 0.25; border-style: dashed; text-decoration: line-through; }
+.hint { margin-top: 16px; }

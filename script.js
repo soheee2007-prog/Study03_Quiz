@@ -72,6 +72,18 @@ function nextQuestion(state) {
   return true;
 }
 
+// 힌트를 쓴다. 오답 보기 2개를 무작위로 골라 지우고 돌려준다.
+// 이미 썼거나 답한 뒤면 상태를 바꾸지 않고 빈 배열을 돌려준다.
+function useHint(state, random = Math.random) {
+  if (state.usedHint || state.answered) return [];
+  const current = state.round[state.index];
+  const wrong = current.choices.filter((c) => c !== current.correctChoice);
+  const hidden = shuffle(wrong, random).slice(0, 2);
+  state.usedHint = true;
+  state.hiddenChoices = hidden;
+  return hidden;
+}
+
 // 점수 문구. 정수면 소수점 없이 보여 준다.
 function formatScore(score, total) {
   return `${score} / ${total}점`;
@@ -155,19 +167,36 @@ if (typeof document !== "undefined") {
   function renderQuestion() {
     const current = state.round[state.index];
     const list = el("div", undefined, "choices");
+    const choiceButtons = new Map();
     for (const choice of current.choices) {
       const button = el("button", choice);
       button.addEventListener("click", () => {
         const result = answerCurrent(state, choice);
         if (result) renderFeedback(result, choice);
       });
+      choiceButtons.set(choice, button);
       list.appendChild(button);
     }
-    show(
+    const nodes = [
       el("p", formatProgress(state.index, state.round.length), "progress"),
       el("h2", current.question),
-      list
-    );
+      list,
+    ];
+    // 힌트 모드에서만 힌트 버튼을 보여 준다.
+    if (state.mode === "hint") {
+      const hint = el("button", "힌트", "hint");
+      hint.disabled = state.usedHint;
+      hint.addEventListener("click", () => {
+        for (const choice of useHint(state)) {
+          const button = choiceButtons.get(choice);
+          button.disabled = true;
+          button.classList.add("hinted");
+        }
+        hint.disabled = true;
+      });
+      nodes.push(hint);
+    }
+    show(...nodes);
   }
 
   // 답한 뒤 화면. chosen은 고른 보기(없으면 null).
@@ -177,6 +206,7 @@ if (typeof document !== "undefined") {
     for (const choice of current.choices) {
       const button = el("button", choice);
       button.disabled = true;
+      if (state.hiddenChoices.includes(choice)) button.classList.add("hinted");
       if (choice === current.correctChoice) button.classList.add("correct");
       else if (choice === chosen) button.classList.add("wrong");
       list.appendChild(button);

@@ -165,3 +165,42 @@ test("틀린 문제 다시 풀기: 틀린 문항만 모아 새 판을 만들고,
   assert.deepStrictEqual(plain(retry.wrongIds), [retry.round[0].id]);
   assert.strictEqual(retry.score, 2);
 });
+
+test("useHint: 난수 수열 20가지에서 항상 서로 다른 오답 2개, 정답은 없다", () => {
+  for (let k = 0; k < 20; k++) {
+    const s = newState();
+    const rq = s.round[0];
+    const hidden = plain(ctx.useHint(s, seq([k / 20, (k * 7 % 20) / 20, ((k * 3 + 1) % 20) / 20, 0.99])));
+    assert.strictEqual(hidden.length, 2);
+    assert.notStrictEqual(hidden[0], hidden[1]);
+    assert.ok(!hidden.includes(rq.correctChoice));
+    assert.ok(hidden.every((c) => rq.choices.includes(c)));
+    assert.strictEqual(s.usedHint, true);
+    assert.deepStrictEqual(plain(s.hiddenChoices), hidden);
+  }
+});
+
+test("useHint: 두 번째는 빈 배열이고 상태가 그대로다", () => {
+  const s = newState();
+  const first = plain(ctx.useHint(s, seq([0.2, 0.8])));
+  assert.deepStrictEqual(plain(ctx.useHint(s, seq([0.9, 0.1]))), []);
+  assert.deepStrictEqual(plain(s.hiddenChoices), first);
+  assert.strictEqual(s.usedHint, true);
+});
+
+test("useHint: 답한 뒤에는 빈 배열이고 상태를 바꾸지 않는다", () => {
+  const s = newState();
+  ctx.answerCurrent(s, null);
+  assert.deepStrictEqual(plain(ctx.useHint(s)), []);
+  assert.strictEqual(s.usedHint, false);
+  assert.deepStrictEqual(plain(s.hiddenChoices), []);
+});
+
+test("힌트를 쓰고 맞히면 0.5점, 쓰지 않고 맞히면 1점", () => {
+  const a = newState();
+  ctx.useHint(a);
+  assert.strictEqual(ctx.answerCurrent(a, a.round[0].correctChoice).gained, 0.5);
+  assert.strictEqual(a.score, 0.5);
+  const b = newState();
+  assert.strictEqual(ctx.answerCurrent(b, b.round[0].correctChoice).gained, 1);
+});
