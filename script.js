@@ -40,6 +40,7 @@ function createState(mode, category, questions, { isRetry = false, random = Math
     usedHint: false,
     hiddenChoices: [],
     wrongIds: [],
+    results: [],
     isRetry,
   };
 }
@@ -59,6 +60,14 @@ function answerCurrent(state, choice) {
   state.answered = true;
   state.score += gained;
   if (!correct) state.wrongIds.push(current.id);
+  // 결과 화면의 문항별 목록에 쓴다.
+  state.results.push({
+    question: current.question,
+    correctChoice: current.correctChoice,
+    correct,
+    usedHint: state.usedHint,
+    timedOut: choice === null,
+  });
   return { correct, gained };
 }
 
@@ -72,9 +81,21 @@ function nextQuestion(state) {
   return true;
 }
 
-// 점수 문구. 정수면 소수점 없이 보여 준다.
+// 힌트를 쓴다. 오답 보기 2개를 무작위로 골라 지우고 돌려준다.
+// 이미 썼거나 답한 뒤면 상태를 바꾸지 않고 빈 배열을 돌려준다.
+function useHint(state, random = Math.random) {
+  if (state.usedHint || state.answered) return [];
+  const current = state.round[state.index];
+  const wrong = current.choices.filter((c) => c !== current.correctChoice);
+  const hidden = shuffle(wrong, random).slice(0, 2);
+  state.usedHint = true;
+  state.hiddenChoices = hidden;
+  return hidden;
+}
+
+// 점수 문구. 예: "7.5 / 10"
 function formatScore(score, total) {
-  return `${score} / ${total}점`;
+  return `${score} / ${total}`;
 }
 
 function formatRetryScore(correctCount, total) {
@@ -89,6 +110,8 @@ function formatProgress(index, total) {
 if (typeof document !== "undefined") {
   const app = document.getElementById("app");
   let state = null;
+  let timerId = null;
+  let secondsLeft = 0;
 
   // 요소를 쉽게 만드는 도우미. 문자열은 textContent로만 넣는다.
   function el(tag, text, className) {
@@ -102,11 +125,40 @@ if (typeof document !== "undefined") {
     app.replaceChildren(...nodes);
   }
 
+  // 스피드 모드 타이머. 시작 전에 항상 이전 타이머를 정리한다.
+  function stopTimer() {
+    if (timerId !== null) {
+      clearInterval(timerId);
+      timerId = null;
+    }
+  }
+
+  function startTimer(label) {
+    stopTimer();
+    secondsLeft = SPEED_SECONDS;
+    // 5초 이하에서는 빨간색으로 보여 준다.
+    const paint = () => {
+      label.textContent = `남은 시간 ${secondsLeft}초`;
+      label.classList.toggle("urgent", secondsLeft <= 5);
+    };
+    paint();
+    timerId = setInterval(() => {
+      secondsLeft -= 1;
+      paint();
+      if (secondsLeft <= 0) {
+        stopTimer();
+        const result = answerCurrent(state, null);
+        if (result) renderFeedback(result, null);
+      }
+    }, 1000);
+  }
+
   function renderError(message) {
     show(el("p", message));
   }
 
   function renderStart() {
+    stopTimer();
     if (typeof QUESTIONS === "undefined") {
       renderError("문제 파일을 불러오지 못했습니다.");
       return;
@@ -114,46 +166,94 @@ if (typeof document !== "undefined") {
     const list = el("div", undefined, "choices");
     for (const category of CATEGORIES) {
       const button = el("button", category);
+      button.addEventListener("click", () => renderModeSelect(category));
+      list.appendChild(button);
+    }
+    show(el("h1", "상식 퀴즈"), el("p", "카테고리를 고르세요.", "notice"), list);
+  }
+
+  // 모드마다 규칙 한 줄. 연습 모드에만 순위표 안내를 붙인다.
+  const MODE_RULES = {
+    practice: "시간 제한과 힌트 없음, 맞히면 1점",
+    speed: `문항마다 ${SPEED_SECONDS}초, 시간이 지나면 오답`,
+    hint: "문항마다 힌트 1번, 힌트를 쓰고 맞히면 0.5점",
+  };
+
+  function renderModeSelect(category) {
+    const list = el("div", undefined, "choices");
+    for (const mode of Object.keys(MODE_LABELS)) {
+      const button = el("button", undefined, "mode-card");
+      button.append(el("strong", MODE_LABELS[mode]), el("span", MODE_RULES[mode]));
+      if (mode === "practice") button.append(el("span", "순위표에 기록되지 않음", "badge"));
       button.addEventListener("click", () => {
         const questions = QUESTIONS.filter((q) => q.category === category);
-        state = createState("practice", category, questions);
+        state = createState(mode, category, questions);
         renderQuestion();
       });
       list.appendChild(button);
     }
-    show(
-      el("h1", "상식 퀴즈"),
-      el("p", "카테고리를 고르세요.", "notice"),
-      list,
-      el("p", "순위표에 기록되지 않음", "notice")
+    const back = el("button", "뒤로", "back");
+    back.addEventListener("click", renderStart);
+    show(el("h2", `${category} · 모드를 고르세요`), list, back);
+  }
+
+  // 문제 화면 위쪽 줄: 카테고리와 모드, 진행, 점수(스피드 모드는 남은 시간까지).
+  function statusBar(timer) {
+    const bar = el("div", undefined, "status");
+    bar.append(
+      el("span", `${state.category} · ${MODE_LABELS[state.mode]}`),
+      el("span", formatProgress(state.index, state.round.length)),
+      el("span", `점수 ${state.score}`)
     );
+    if (timer) bar.append(timer);
+    return bar;
   }
 
   function renderQuestion() {
     const current = state.round[state.index];
     const list = el("div", undefined, "choices");
+    const choiceButtons = new Map();
     for (const choice of current.choices) {
       const button = el("button", choice);
       button.addEventListener("click", () => {
+        stopTimer();
         const result = answerCurrent(state, choice);
         if (result) renderFeedback(result, choice);
       });
+      choiceButtons.set(choice, button);
       list.appendChild(button);
     }
-    show(
-      el("p", formatProgress(state.index, state.round.length), "progress"),
-      el("h2", current.question),
-      list
-    );
+    // 스피드 모드에서만 남은 시간을 위쪽 줄에 보여 준다.
+    const timer = state.mode === "speed" ? el("span", undefined, "timer") : null;
+    const nodes = [statusBar(timer), el("h2", current.question), list];
+    // 힌트 모드에서만 힌트 버튼을 보여 준다.
+    if (state.mode === "hint") {
+      const hint = el("button", "힌트 (오답 2개 지우기)", "hint");
+      hint.addEventListener("click", () => {
+        for (const choice of useHint(state)) {
+          const button = choiceButtons.get(choice);
+          button.disabled = true;
+          button.classList.add("hinted");
+        }
+        hint.textContent = "힌트 사용함";
+        hint.disabled = true;
+      });
+      nodes.push(hint);
+    }
+    show(...nodes);
+    if (timer) startTimer(timer);
+    else stopTimer();
   }
 
   // 답한 뒤 화면. chosen은 고른 보기(없으면 null).
   function renderFeedback(result, chosen) {
+    stopTimer();
     const current = state.round[state.index];
     const list = el("div", undefined, "choices");
     for (const choice of current.choices) {
       const button = el("button", choice);
       button.disabled = true;
+      if (state.hiddenChoices.includes(choice)) button.classList.add("hinted");
       if (choice === current.correctChoice) button.classList.add("correct");
       else if (choice === chosen) button.classList.add("wrong");
       list.appendChild(button);
@@ -173,10 +273,19 @@ if (typeof document !== "undefined") {
       else renderResult();
     });
 
+    const verdictNodes = [];
+    if (chosen === null) verdictNodes.push(el("p", "시간 초과", "verdict"));
+    // 스피드 모드는 멈춘 남은 시간을 그대로 보여 준다.
+    let stopped = null;
+    if (state.mode === "speed") {
+      stopped = el("span", `남은 시간 ${secondsLeft}초`, "timer");
+      stopped.classList.toggle("urgent", secondsLeft <= 5);
+    }
     show(
-      el("p", formatProgress(state.index, state.round.length), "progress"),
+      statusBar(stopped),
       el("h2", current.question),
       list,
+      ...verdictNodes,
       el("p", result.correct ? "정답입니다." : "오답입니다.", "verdict"),
       el("p", current.explanation, "explanation"),
       source,
@@ -185,14 +294,53 @@ if (typeof document !== "undefined") {
   }
 
   function renderResult() {
-    const home = el("button", "처음으로", "next");
+    stopTimer();
+    const isPractice = state.mode === "practice";
+    const total = state.round.length;
+    const scoreText = state.isRetry
+      ? formatRetryScore(state.score, total)
+      : formatScore(state.score, total);
+    const nodes = [el("h2", "결과"), el("p", scoreText, "score")];
+    if (isPractice) nodes.push(el("p", "순위표에 기록되지 않음", "badge-box"));
+
+    // 문항별 결과: 문제, 그 아래 "정답 · 정답: ○○" 또는 "오답 · 정답: ○○"
+    const list = el("ol", undefined, "result-list");
+    for (const r of state.results) {
+      let label = r.correct ? "정답" : "오답";
+      if (r.correct && r.usedHint) label = "정답 (힌트 0.5점)";
+      if (r.timedOut) label = "시간 초과";
+      const item = el("li");
+      item.append(
+        el("div", r.question),
+        el("div", `${label} · 정답: ${r.correctChoice}`, r.correct ? "ok" : "ng")
+      );
+      list.appendChild(item);
+    }
+    nodes.push(list);
+
+    const actions = el("div", undefined, "actions");
+    // 연습 판에서 틀린 문제가 있으면 다시 풀기 버튼을 보여 준다.
+    if (isPractice && state.wrongIds.length > 0) {
+      const retry = el("button", "틀린 문제 다시 풀기", "primary");
+      retry.addEventListener("click", () => {
+        const wrong = QUESTIONS.filter((q) => state.wrongIds.includes(q.id));
+        state = createState("practice", state.category, wrong, { isRetry: true });
+        renderQuestion();
+      });
+      actions.appendChild(retry);
+    }
+    // 같은 카테고리와 모드로 새 판을 시작한다(문항을 새로 섞음).
+    const again = el("button", "같은 모드 다시", "primary");
+    again.addEventListener("click", () => {
+      const questions = QUESTIONS.filter((q) => q.category === state.category);
+      state = createState(state.mode, state.category, questions);
+      renderQuestion();
+    });
+    const home = el("button", "처음으로");
     home.addEventListener("click", renderStart);
-    show(
-      el("h1", "결과"),
-      el("p", formatScore(state.score, state.round.length), "score"),
-      el("p", "순위표에 기록되지 않음", "notice"),
-      home
-    );
+    actions.append(again, home);
+    nodes.push(actions);
+    show(...nodes);
   }
 
   renderStart();
