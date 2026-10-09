@@ -87,4 +87,113 @@ function formatProgress(index, total) {
 
 // 브라우저에서만 실행한다(테스트에서는 document가 없음).
 if (typeof document !== "undefined") {
+  const app = document.getElementById("app");
+  let state = null;
+
+  // 요소를 쉽게 만드는 도우미. 문자열은 textContent로만 넣는다.
+  function el(tag, text, className) {
+    const node = document.createElement(tag);
+    if (text !== undefined) node.textContent = text;
+    if (className) node.className = className;
+    return node;
+  }
+
+  function show(...nodes) {
+    app.replaceChildren(...nodes);
+  }
+
+  function renderError(message) {
+    show(el("p", message));
+  }
+
+  function renderStart() {
+    if (typeof QUESTIONS === "undefined") {
+      renderError("문제 파일을 불러오지 못했습니다.");
+      return;
+    }
+    const list = el("div", undefined, "choices");
+    for (const category of CATEGORIES) {
+      const button = el("button", category);
+      button.addEventListener("click", () => {
+        const questions = QUESTIONS.filter((q) => q.category === category);
+        state = createState("practice", category, questions);
+        renderQuestion();
+      });
+      list.appendChild(button);
+    }
+    show(
+      el("h1", "상식 퀴즈"),
+      el("p", "카테고리를 고르세요.", "notice"),
+      list,
+      el("p", "순위표에 기록되지 않음", "notice")
+    );
+  }
+
+  function renderQuestion() {
+    const current = state.round[state.index];
+    const list = el("div", undefined, "choices");
+    for (const choice of current.choices) {
+      const button = el("button", choice);
+      button.addEventListener("click", () => {
+        const result = answerCurrent(state, choice);
+        if (result) renderFeedback(result, choice);
+      });
+      list.appendChild(button);
+    }
+    show(
+      el("p", formatProgress(state.index, state.round.length), "progress"),
+      el("h2", current.question),
+      list
+    );
+  }
+
+  // 답한 뒤 화면. chosen은 고른 보기(없으면 null).
+  function renderFeedback(result, chosen) {
+    const current = state.round[state.index];
+    const list = el("div", undefined, "choices");
+    for (const choice of current.choices) {
+      const button = el("button", choice);
+      button.disabled = true;
+      if (choice === current.correctChoice) button.classList.add("correct");
+      else if (choice === chosen) button.classList.add("wrong");
+      list.appendChild(button);
+    }
+
+    const link = el("a", current.source.title);
+    link.href = current.source.url;
+    link.target = "_blank";
+    link.rel = "noopener";
+    const source = el("p", "출처: ", "source");
+    source.appendChild(link);
+
+    const isLast = state.index >= state.round.length - 1;
+    const next = el("button", isLast ? "결과 보기" : "다음", "next");
+    next.addEventListener("click", () => {
+      if (nextQuestion(state)) renderQuestion();
+      else renderResult();
+    });
+
+    show(
+      el("p", formatProgress(state.index, state.round.length), "progress"),
+      el("h2", current.question),
+      list,
+      el("p", result.correct ? "정답입니다." : "오답입니다.", "verdict"),
+      el("p", current.explanation, "explanation"),
+      source,
+      next
+    );
+  }
+
+  function renderResult() {
+    const home = el("button", "처음으로", "next");
+    home.addEventListener("click", renderStart);
+    show(
+      el("h1", "결과"),
+      el("p", formatScore(state.score, state.round.length), "score"),
+      el("p", "순위표에 기록되지 않음", "notice"),
+      home
+    );
+  }
+
+  renderStart();
 }

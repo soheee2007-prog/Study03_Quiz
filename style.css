@@ -1,0 +1,47 @@
+/* 생성 일시: 2026-10-09 15:46 KST */
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: "Malgun Gothic", sans-serif;
+  background: #f4f6f8;
+  color: #1f2933;
+}
+
+#app {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+h1 { font-size: 1.5rem; margin: 8px 0 16px; }
+h2 { font-size: 1.2rem; line-height: 1.5; margin: 8px 0 16px; }
+
+.notice { color: #52606d; margin: 0 0 16px; }
+.progress { color: #52606d; margin: 0; }
+
+/* 버튼은 한 줄에 하나씩 */
+.choices { display: flex; flex-direction: column; gap: 10px; }
+
+button {
+  font: inherit;
+  padding: 12px 14px;
+  text-align: left;
+  background: #fff;
+  border: 2px solid #cbd2d9;
+  border-radius: 8px;
+  cursor: pointer;
+}
+button:hover:not(:disabled) { border-color: #3e7bd6; }
+button:disabled { opacity: 0.5; cursor: default; }
+
+/* 정답 보기와 고른 오답 보기 */
+button.correct { background: #d8f3dc; border-color: #2d8a46; opacity: 1; }
+button.wrong { background: #fde2e2; border-color: #c0392b; opacity: 1; }
+
+.next { margin-top: 16px; background: #3e7bd6; border-color: #3e7bd6; color: #fff; text-align: center; }
+
+.verdict { font-weight: bold; margin: 16px 0 4px; }
+.explanation, .source { margin: 4px 0; line-height: 1.5; }
+.score { font-size: 1.4rem; font-weight: bold; }
