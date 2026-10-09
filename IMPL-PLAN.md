@@ -10,7 +10,7 @@
 
 **Tech Stack:** HTML, CSS, 바닐라 자바스크립트(빌드 도구 없음), 테스트는 Node.js 24 내장 `node --test`.
 
-**Spec:** [PRD.md](../../../PRD.md)
+**Spec:** [PRD.md](PRD.md)
 
 ## Global Constraints
 
