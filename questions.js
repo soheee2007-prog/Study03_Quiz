@@ -1,5 +1,5 @@
 // 생성 일시: 2026-10-09 15:34 KST
-// 상식 퀴즈 문항 40개. 문항마다 출처 페이지를 직접 확인했다.
+// 상식 퀴즈 문항 40개. 작성 규칙은 CLAUDE.md를 따른다.
 const QUESTIONS = [
   {
     id: "kh-01",
@@ -25,7 +25,7 @@ const QUESTIONS = [
     question: "698년에 고구려 유민을 이끌고 발해를 세운 인물은?",
     choices: ["연개소문","김유신","대조영","장보고"],
     answer: 2,
-    explanation: "고구려 장수 출신의 대조영이 698년에 진국을 세웠고, 뒤에 국호가 발해로 불렸다.",
+    explanation: "대조영은 698년에 진국을 세웠고, 뒤에 국호가 발해로 불렸다.",
     source: { title: "발해 - 한국민족문화대백과사전", url: "https://encykorea.aks.ac.kr/Article/E0021626" }
   },
   {
@@ -104,7 +104,7 @@ const QUESTIONS = [
     id: "wg-02",
     category: "세계지리",
     question: "2020년 중국과 네팔이 함께 발표한 측정값 기준으로, 해발 고도가 가장 높은 산은?",
-    choices: ["K2","킬리만자로산","몽블랑","에베레스트산"],
+    choices: ["칸첸중가산","킬리만자로산","몽블랑","에베레스트산"],
     answer: 3,
     explanation: "에베레스트산은 해발 약 8,849미터로 지구에서 해발 고도가 가장 높은 산이다.",
     source: { title: "Mount Everest - Britannica", url: "https://www.britannica.com/place/Mount-Everest" }
@@ -115,7 +115,7 @@ const QUESTIONS = [
     question: "2026년 현재, 더운 사막 가운데 면적이 가장 넓은 사막은?",
     choices: ["사하라 사막","고비 사막","아라비아 사막","칼라하리 사막"],
     answer: 0,
-    explanation: "사하라 사막은 북아프리카에 약 860만 제곱킬로미터로 펼쳐진 세계에서 가장 큰 더운 사막이다.",
+    explanation: "사하라 사막은 북아프리카에 펼쳐진 세계에서 가장 큰 더운 사막이다.",
     source: { title: "Sahara summary - Britannica", url: "https://www.britannica.com/summary/Sahara-desert-Africa" }
   },
   {
@@ -211,7 +211,7 @@ const QUESTIONS = [
   {
     id: "sc-04",
     category: "과학",
-    question: "다음 중 DNA를 이루는 염기가 아닌 것은?",
+    question: "RNA에서 DNA의 티민 대신 들어가는 염기는?",
     choices: ["아데닌","우라실","구아닌","시토신"],
     answer: 1,
     explanation: "우라실은 RNA에만 들어 있고, DNA에서는 티민이 그 자리를 대신한다.",
@@ -224,7 +224,7 @@ const QUESTIONS = [
     choices: ["금성","지구","수성","화성"],
     answer: 2,
     explanation: "수성은 태양에서 평균 약 5800만 킬로미터 떨어진, 태양에 가장 가까운 행성이다.",
-    source: { title: "Mercury - NASA Science", url: "https://science.nasa.gov/mercury/" }
+    source: { title: "Mercury Facts - NASA Science", url: "https://science.nasa.gov/mercury/facts/" }
   },
   {
     id: "sc-06",
@@ -256,10 +256,10 @@ const QUESTIONS = [
   {
     id: "sc-09",
     category: "과학",
-    question: "순수한 물은 중성이다. 이때의 pH 값은?",
+    question: "25℃에서 순수한 물은 중성이다. 이때의 pH 값은?",
     choices: ["0","5","7","14"],
     answer: 2,
-    explanation: "순수한 물은 수소 이온과 수산화 이온의 수가 같아 pH가 7인 중성이다.",
+    explanation: "25℃에서 순수한 물은 수소 이온과 수산화 이온의 농도가 같아 pH가 7인 중성이다.",
     source: { title: "pH - Britannica", url: "https://www.britannica.com/science/pH" }
   },
   {
@@ -275,7 +275,7 @@ const QUESTIONS = [
     id: "ac-01",
     category: "예술과 문화",
     question: "〈모나리자〉를 그린 화가는?",
-    choices: ["레오나르도 다 빈치","미켈란젤로","라파엘로","산드로 보티첼리"],
+    choices: ["레오나르도 다 빈치","미켈란젤로 부오나로티","라파엘로 산치오","산드로 보티첼리"],
     answer: 0,
     explanation: "〈모나리자〉는 레오나르도 다 빈치가 1503년경부터 그리기 시작한 초상화이다.",
     source: { title: "Mona Lisa - Britannica", url: "https://www.britannica.com/topic/Mona-Lisa-painting" }
@@ -293,7 +293,7 @@ const QUESTIONS = [
     id: "ac-03",
     category: "예술과 문화",
     question: "덴마크의 왕자가 아버지의 죽음에 복수하는 비극 〈햄릿〉을 쓴 작가는?",
-    choices: ["찰스 디킨스","괴테","윌리엄 셰익스피어","빅토르 위고"],
+    choices: ["찰스 디킨스","요한 볼프강 폰 괴테","윌리엄 셰익스피어","빅토르 위고"],
     answer: 2,
     explanation: "〈햄릿〉은 셰익스피어가 1600년경에 쓴 5막의 비극이다.",
     source: { title: "Hamlet - Britannica", url: "https://www.britannica.com/topic/Hamlet-by-Shakespeare" }
@@ -322,7 +322,7 @@ const QUESTIONS = [
     question: "발레 〈백조의 호수〉를 작곡한 사람은?",
     choices: ["스트라빈스키","차이콥스키","드뷔시","쇼팽"],
     answer: 1,
-    explanation: "〈백조의 호수〉는 차이콥스키가 1876년에 작곡한 그의 첫 발레 음악이다.",
+    explanation: "〈백조의 호수〉는 차이콥스키가 작곡한 그의 첫 발레 음악이다.",
     source: { title: "Swan Lake - Britannica", url: "https://www.britannica.com/topic/Swan-Lake-ballet-by-Tchaikovsky" }
   },
   {
