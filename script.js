@@ -40,6 +40,7 @@ function createState(mode, category, questions, { isRetry = false, random = Math
     usedHint: false,
     hiddenChoices: [],
     wrongIds: [],
+    results: [],
     isRetry,
   };
 }
@@ -59,6 +60,14 @@ function answerCurrent(state, choice) {
   state.answered = true;
   state.score += gained;
   if (!correct) state.wrongIds.push(current.id);
+  // 결과 화면의 문항별 목록에 쓴다.
+  state.results.push({
+    question: current.question,
+    correctChoice: current.correctChoice,
+    correct,
+    usedHint: state.usedHint,
+    timedOut: choice === null,
+  });
   return { correct, gained };
 }
 
@@ -84,9 +93,9 @@ function useHint(state, random = Math.random) {
   return hidden;
 }
 
-// 점수 문구. 정수면 소수점 없이 보여 준다.
+// 점수 문구. 예: "7.5 / 10"
 function formatScore(score, total) {
-  return `${score} / ${total}점`;
+  return `${score} / ${total}`;
 }
 
 function formatRetryScore(correctCount, total) {
@@ -291,22 +300,46 @@ if (typeof document !== "undefined") {
     const scoreText = state.isRetry
       ? formatRetryScore(state.score, total)
       : formatScore(state.score, total);
-    const home = el("button", "처음으로", "next");
-    home.addEventListener("click", renderStart);
+    const nodes = [el("h2", "결과"), el("p", scoreText, "score")];
+    if (isPractice) nodes.push(el("p", "순위표에 기록되지 않음", "badge-box"));
 
-    const nodes = [el("h1", "결과"), el("p", scoreText, "score")];
-    if (isPractice) nodes.push(el("p", "순위표에 기록되지 않음", "notice"));
+    // 문항별 결과: 문제, 그 아래 "정답 · 정답: ○○" 또는 "오답 · 정답: ○○"
+    const list = el("ol", undefined, "result-list");
+    for (const r of state.results) {
+      let label = r.correct ? "정답" : "오답";
+      if (r.correct && r.usedHint) label = "정답 (힌트 0.5점)";
+      if (r.timedOut) label = "시간 초과";
+      const item = el("li");
+      item.append(
+        el("div", r.question),
+        el("div", `${label} · 정답: ${r.correctChoice}`, r.correct ? "ok" : "ng")
+      );
+      list.appendChild(item);
+    }
+    nodes.push(list);
+
+    const actions = el("div", undefined, "actions");
     // 연습 판에서 틀린 문제가 있으면 다시 풀기 버튼을 보여 준다.
     if (isPractice && state.wrongIds.length > 0) {
-      const retry = el("button", "틀린 문제 다시 풀기", "next");
+      const retry = el("button", "틀린 문제 다시 풀기", "primary");
       retry.addEventListener("click", () => {
         const wrong = QUESTIONS.filter((q) => state.wrongIds.includes(q.id));
         state = createState("practice", state.category, wrong, { isRetry: true });
         renderQuestion();
       });
-      nodes.push(retry);
+      actions.appendChild(retry);
     }
-    nodes.push(home);
+    // 같은 카테고리와 모드로 새 판을 시작한다(문항을 새로 섞음).
+    const again = el("button", "같은 모드 다시", "primary");
+    again.addEventListener("click", () => {
+      const questions = QUESTIONS.filter((q) => q.category === state.category);
+      state = createState(state.mode, state.category, questions);
+      renderQuestion();
+    });
+    const home = el("button", "처음으로");
+    home.addEventListener("click", renderStart);
+    actions.append(again, home);
+    nodes.push(actions);
     show(...nodes);
   }
 

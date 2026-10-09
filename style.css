@@ -54,7 +54,17 @@ button.wrong { background: #fde2e2; border-color: #c0392b; opacity: 1; }
 
 .verdict { font-weight: bold; margin: 16px 0 4px; }
 .explanation, .source { margin: 4px 0; line-height: 1.5; }
-.score { font-size: 1.4rem; font-weight: bold; }
+.score { font-size: 1.8rem; font-weight: bold; margin: 8px 0 12px; }
+
+/* 결과 화면: 노란 안내 상자, 문항별 결과 목록, 버튼 한 줄 */
+.badge-box { background: #fff4d6; padding: 8px 12px; border-radius: 8px; margin: 0 0 12px; }
+.result-list { padding-left: 24px; margin: 0 0 16px; line-height: 1.5; }
+.result-list li { margin-bottom: 8px; }
+.result-list .ok { color: #2d8a46; font-size: 0.9rem; }
+.result-list .ng { color: #c0392b; font-size: 0.9rem; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.actions button { flex: 1 1 auto; text-align: center; white-space: nowrap; padding: 12px 8px; }
+button.primary { background: #3e63dd; border-color: #3e63dd; color: #fff; }
 
 /* 모드 선택 카드: 모드 이름, 규칙 한 줄, 연습 모드의 안내 표시 */
 .mode-card { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }

@@ -124,8 +124,8 @@ test("nextQuestion: 마지막 문항에서만 false, 넘어가면 문항 상태�
 });
 
 test("표시 형식 함수", () => {
-  assert.strictEqual(ctx.formatScore(7.5, 10), "7.5 / 10점");
-  assert.strictEqual(ctx.formatScore(7, 10), "7 / 10점");
+  assert.strictEqual(ctx.formatScore(7.5, 10), "7.5 / 10");
+  assert.strictEqual(ctx.formatScore(7, 10), "7 / 10");
   assert.strictEqual(ctx.formatRetryScore(2, 3), "3문제 중 2개 맞힘");
   assert.strictEqual(ctx.formatProgress(2, 10), "3 / 10");
   assert.strictEqual(ctx.formatProgress(0, 10), "1 / 10");
@@ -203,4 +203,27 @@ test("힌트를 쓰고 맞히면 0.5점, 쓰지 않고 맞히면 1점", () => {
   assert.strictEqual(a.score, 0.5);
   const b = newState();
   assert.strictEqual(ctx.answerCurrent(b, b.round[0].correctChoice).gained, 1);
+});
+
+test("answerCurrent: 결과 화면 목록용으로 문항별 결과를 차례로 남긴다", () => {
+  const s = newState();
+  const first = s.round[0];
+  ctx.answerCurrent(s, first.correctChoice);
+  ctx.nextQuestion(s);
+  const second = s.round[1];
+  ctx.useHint(s, seq([0.2, 0.6]));
+  const wrong = second.choices.find((c) => c !== second.correctChoice && !s.hiddenChoices.includes(c));
+  ctx.answerCurrent(s, wrong);
+  ctx.nextQuestion(s);
+  ctx.answerCurrent(s, null);
+  ctx.answerCurrent(s, null); // 두 번째 답은 무시된다
+  assert.deepStrictEqual(plain(s.results), [
+    { question: first.question, correctChoice: first.correctChoice, correct: true, usedHint: false, timedOut: false },
+    { question: second.question, correctChoice: second.correctChoice, correct: false, usedHint: true, timedOut: false },
+    { question: s.round[2].question, correctChoice: s.round[2].correctChoice, correct: false, usedHint: false, timedOut: true },
+  ]);
+});
+
+test("createState: 문항별 결과 목록은 빈 배열로 시작한다", () => {
+  assert.deepStrictEqual(plain(newState().results), []);
 });
